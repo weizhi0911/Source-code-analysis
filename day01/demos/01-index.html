@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Vue精简版数据驱动</title>
+	<!-- <script src="../../node_modules/vue/dist/vue.js"></script> -->
+</head>
+
+<body>
+	<div id="root">
+		<p>{{name}}--{{message}}</p>
+		<p>{{name}}</p>
+		<p>{{message}}</p>
+	</div>
+	<script>
+		// Vue精简版数据驱动
+
+		let brackets = /\{\{(.+?)\}\}/g // g全局，判断多个{}
+		// 1.拿到模板
+		// 2.拿到数据（data）
+		// 3.将数据与模板结合，得到的是HTML
+		// 4.放到页面
+
+		// 1.拿到模板
+		let tmpNode = document.querySelector("#root") // 模板
+
+		// 2.拿到数据（data）
+		let data = {
+			name: '一个name',
+			message: '一个消息'
+		}
+
+		// 3.将数据放到模板，一般使用递归
+		// 现在这个案例中template是DOM元素
+		// 在vue源码中是DOM-》字符串模板->VNode（虚拟DOM）->真正的DOM
+		function compiler(template, data) {
+			let childNodes = template.childNodes; // 取出子元素
+			for (let i = 0; i < childNodes.length; i++) {
+				let type = childNodes[i].nodeType; // type 1为元素，3为文本节点
+				if (type === 3) {
+
+					// 文本节点，可以判断里卖弄是否有{{}}插值
+					let txt = childNodes[i].nodeValue //该属性主义文本节点才有意义
+					// 判断有没有{{}}
+					txt = txt.replace(brackets, function (_, g) { // 使用正则匹配一个就调用一次，参数为匹配到的数据与函数中的第n组
+						let key = g.trim()
+						let value = data[key]
+						// 将{{xxx}}用这个data里的值替换
+						return value
+					})
+
+					// 注意，txt现在和DOM元素是没有关系的，需要以下步骤
+					childNodes[i].nodeValue = txt
+
+				} else if (type === 1) {
+					// 元素的话，考虑有没有资源，是否需要将子元素进行判断是否有插值
+					compiler(childNodes[i], data)
+				}
+
+			}
+		}
+
+		// 因为没有做tmpNode生成新的值，DOM是引用类型，所以第一个tmpNode打印也能在控制台中看到更新的数据
+		// 这样做模板就没有了，可以以下generateNode这样做
+		// console.log(tmpNode)
+		// compiler(tmpNode, data)
+		// console.log(tmpNode)
+
+		let generateNode = tmpNode.cloneNode(true) // 这里是DOM元素，可以这样用
+
+		console.log(tmpNode)
+		compiler(generateNode, data)
+		console.log(generateNode)
+
+		// 4.放到页面，tmpNode没有动还是保留下来了
+		// parentNode返回父节点
+		// replaceChild() 方法用指定的节点替换当前节点的一个子节点，并返回被替换掉的节点
+		root.parentNode.replaceChild(generateNode, root)
+
+		// 上面的思路有很大的问题：
+		// 1.vue使用的是虚拟DOM
+		// 2.只考虑了单属性{{name}},而vue中大量使用了层级{{obj.name}}
+		// 3.代码没有整合
+	</script>
+</body>
+
+
+
+</html>

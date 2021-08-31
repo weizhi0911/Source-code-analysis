@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue数据驱动-多属性获取方式</title>
+  <!-- <script src="../../node_modules/vue/dist/vue.js"></script> -->
+</head>
+
+<body>
+  <div id="root">
+  </div>
+  <script>
+    // 需先了解02-index.html正则获取数据那一段
+    function getValueByPath(obj, path) {
+      let paths = path.split('.') // [xxx,yyy,zzz]
+
+      // 先取到obj.xxx,再取得结果中的yyy,再取得结果中的zzz
+      // let res = null
+      // res = obj[paths[0]]
+      // res = obj[paths[1]]
+      // res = obj[paths[2]]
+
+      let res = obj
+      let prop;
+      while (prop = paths.shift()) { // shift取数组第一个，取一次少一个值，因为原数组被改
+        res = res[prop]
+      }
+      return res
+    }
+
+    var o = {
+      a: {
+        b: {
+          c: {
+            d: {
+              e: '拿到了'
+            }
+          }
+        }
+      }
+    }
+    // 不是从o.开始， vue {{}}上下文就是当前实例
+    console.log(getValueByPath(o, 'a.b.c'))
+    console.log(getValueByPath(o, 'a.b.c.d.e'))
+  </script>
+</body>
+
+
+
+</html>

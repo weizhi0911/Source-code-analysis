@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue-render函数优化</title>
+  <!-- <script src="../../node_modules/vue/dist/vue.js"></script> -->
+</head>
+
+<body>
+  <div id="root">
+    <div class="cc">
+      <div title="22"> {{age}} </div>
+      <div> {{name}} </div>
+      <div> {{gender}} </div>
+      <ul>
+        <li>hello1</li>
+        <li>hello2</li>
+        <li>hello3</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    /**
+     * 虚拟DOM构造函数，生成虚拟DOM的
+     */
+    class VNode { // 精简版
+      constructor(tag, data, value, type) { // tag元素，value文本
+        this.tag = tag && tag.toLowerCase()
+        this.data = data
+        this.value = value
+        this.type = type
+        this.children = []
+      }
+
+      appendChild(vnode) {
+        this.children.push(vnode)
+      }
+    }
+
+    /**
+     * 由HTML DOM -> VNode将这个函数当成compiler
+     */
+    function getVNode(node) {
+      let nodeType = node.nodeType
+      let _vnode = null
+      if (nodeType === 1) { // 元素
+        let nodeName = node.nodeName
+        let attrs = node.attributes // 伪数组
+        let _attrObj = {}
+        for (let i = 0; i < attrs.length; i++) { // attrs[i]属性节点
+          _attrObj[attrs[i].nodeName] = attrs[i].nodeValue
+        }
+
+        _vnode = new VNode(nodeName, _attrObj, undefined, nodeType)
+
+        // 还需要考虑node（真正的元素） 的子元素
+        let childNodes = node.childNodes
+        for (let i = 0; i < childNodes.length; i++) {
+          _vnode.appendChild(getVNode(childNodes[i])) // 递归, appendChild构造函数里的方法
+        }
+      } else if (nodeType === 3) { // 文本
+        _vnode = new VNode(undefined, undefined, node.nodeValue, nodeType)
+      }
+      return _vnode
+    }
+
+    // 柯里化函数
+    function getValueByPath(obj, path) {
+      let paths = path.split('.') // [xxx,yyy,zzz]
+      // return function getValueByPath(obj) {
+      let res = obj
+      let prop;
+      while (prop = paths.shift()) { // shift取数组第一个，取一次少一个值，因为原数组被改
+        res = res[prop]
+      }
+      return res
+      // }
+    }
+
+    let brackets = /\{\{(.+?)\}\}/g // g全局，判断多个{}
+    // 将带有坑的VNode与数据data结合，得到填充数据的VNode,模拟 AST -> VNode
+    function combine(vnode, data) {
+      let _type = vnode.type
+      let _data = vnode.data
+      let _value = vnode.value
+      let _tag = vnode.tag
+      let _children = vnode.children
+
+      let _vnode = null
+
+      if (_type === 3) { // 文本节点
+        _value = _value.replace(brackets, function (_, g) {
+          return getValueByPath(data, g.trim())
+        })
+        _vnode = new VNode(_tag, _data, _value, _type)
+
+      } else if (_type === 1) { // 元素节点
+        _vnode = new VNode(_tag, _data, _value, _type);
+        _children.forEach(_subvnode => _vnode.appendChild(combine(_subvnode, data)));
+      }
+      return _vnode
+    }
+
+    function JGVue(option) {
+      this._data = option.data
+      this._template = document.querySelector(option.el) // Vue中是字符串，这里是DOM
+
+      this.mount()
+    }
+
+    JGVue.prototype.mount = function () {
+      // 需要提供一个render方法：生成虚拟DMO
+      this.render = this.createRenderFn()
+
+      this.mountComonent()
+    }
+
+    JGVue.prototype.mountComonent = function () {
+      // 执行mountComponent() 函数
+
+      let mount = () => {
+        this.uptate(this.render())
+      }
+
+      mount.call(this) // 本质应该交给watcher来调用，之后讲
+    }
+
+    /**
+     * 在真正的Vue中使用了二次提交的设计结构
+     * 1.在页面中的DOM和虚拟DOM是一一对应的关系
+     * 2.先有AST和数据生成VNode（新，render）
+     * 3.将旧的VNode和新的VNode比较（diff算法）,更新（uptate）
+     */
+
+    // 这里是生成render函数，目的是缓存抽象语法树（我们使用虚拟DOM来模拟）
+    JGVue.prototype.createRenderFn = function () {
+      // 缓存AST
+      let ast = getVNode(this._template)
+
+      // 将 AST + data => VNode
+      // 我们将带有坑的VNode + data => 含有数据的VNode （之前是模拟的AST）
+      return function render() {
+        // 将带坑的VNode转换为带数据的VNode
+        let _tmp = combine(ast,this._data)
+        return _tmp
+      }
+
+    }
+
+    // 将虚拟DOM渲染到页面中，diff就在这里
+    JGVue.prototype.uptate = function () {
+
+    }
+
+    let app = new JGVue({
+      el: '#root',
+      data: {
+        name: 'wwf',
+        age: '18',
+        gender: '男'
+      }
+    })
+
+    console.log(app)
+  </script>
+</body>
+
+
+
+</html>

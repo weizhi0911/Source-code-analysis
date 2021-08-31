@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    var o = {}
+    let _genter
+    o.namme = 'wwf'
+    o.age = '18'
+    Object.defineProperty(o, 'gender', {
+      // writeable: true,
+      configable: true,
+      enumerable: true, // 控制属性是否可枚举，是不是可以被for-in取出来
+      get() { // 如果使用o.gender来访问数据的话，就会调用get函数（getter,读取器）
+        return _genter
+      },
+      set(newVal) { // 可以获取到设置后的值
+        console.log('赋值新值', newVal)
+        _genter = newVal
+      }
+    })
+    o.gender = '99'
+    console.log(o.gender)
+
+    // _genter被暴露在全局作用域中，要如何处理???
+    // 在Vue中使用defineRective(target, key, value, enumerable)
+    // 03-将对象转换为响应式.html  实现
+    
+  </script>
+</body>
+
+</html>

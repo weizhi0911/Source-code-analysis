@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue虚拟DOM-精简版</title>
+  <!-- <script src="../../node_modules/vue/dist/vue.js"></script> -->
+</head>
+
+<body>
+  <div id="root">
+    <div class="cc">
+      <div title="22"> 1 </div>
+      <div> 2 </div>
+      <div> 3 </div>
+      <ul>
+        <li>hello1</li>
+        <li>hello2</li>
+        <li>hello3</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    // 为什么要使用虚拟DOM？性能
+    // <div />=> { tag: 'div' }
+    // 文本节点 => { tag: undefined, value: '文本节点' }
+    // <div title='1' class="c" /> => { tag: 'div', data: {title: '1', class: 'c' }}
+    // <div><div /></div> => {tag: 'div', children: [{ tag: 'div' }]}
+
+    class VNode { // 精简版
+      constructor(tag, data, value, type) { // tag元素，value文本
+        this.tag = tag && tag.toLowerCase()
+        this.data = data
+        this.value = value
+        this.type = type
+        this.children = []
+      }
+
+      appendChild(vnode) {
+        this.children.push(vnode)
+      }
+    }
+
+    // Vue 中的源码使用的是栈结构，使用栈存储父元素来实现递归生成
+
+    // 我们这边使用递归来遍历DOM元素，生成虚拟DOM，功能相同
+    function getVNode(node) {
+      let nodeType = node.nodeType
+      let _vnode = null
+      if (nodeType === 1) { // 元素
+        let nodeName = node.nodeName
+        let attrs = node.attributes // 伪数组
+        let _attrObj = {}
+        for (let i = 0; i < attrs.length; i++) { // attrs[i]属性节点
+          _attrObj[attrs[i].nodeName] = attrs[i].nodeValue
+        }
+
+        _vnode = new VNode(nodeName, _attrObj, undefined, nodeType)
+
+        // 还需要考虑node（真正的元素） 的子元素
+        let childNodes = node.childNodes
+        for (let i = 0; i < childNodes.length; i++) {
+          _vnode.appendChild(getVNode(childNodes[i])) // 递归, appendChild构造函数里的方法
+        }
+      } else if (nodeType === 3) { // 文本
+        _vnode = new VNode(undefined, undefined, node.nodeValue, nodeType)
+      }
+      return _vnode
+    }
+
+    let root = document.querySelector('#root')
+
+    let vroot = getVNode(root)
+    console.log(vroot)
+
+    // 将虚拟DOM转化为真实DOM
+    function parseVNode(vnode) {
+      // 创建真实的DOM
+      let type = vnode.type
+      let _node = null
+      if (type === 3) {
+        return document.createTextNode(vnode.value) // 创建文本节点
+      } else if (type === 1) {
+        _node = document.createElement(vnode.tag)
+
+        // 属性
+        let data = vnode.data; // 现在这个data是键值对
+
+        Object.keys(data).forEach(key => {
+          let attrName = key
+          let attrValue = data[key]
+          _node.setAttribute(attrName, attrValue)
+        })
+
+        // 子元素
+        let children = vnode.children
+        children.forEach(subvnode => { // subvnode为虚拟DOM
+          // 注意：这里的appendChild是元素里的方法不是构造函数的方法
+          _node.appendChild(parseVNode(subvnode)) // 递归转换子元素（虚拟DOM）
+        })
+        return _node
+      }
+    }
+    // 在真正的Vue中也是使用递归+栈 数据类型
+    let dome2 = parseVNode(vroot)
+    // 验证，将转化后的DOM打印出来，看看是不是和原来的一样
+    console.log(dome2)
+  </script>
+</body>
+
+
+
+</html>

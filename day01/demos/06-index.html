@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue内置标签循环优化处理</title>
+  <!-- <script src="../../node_modules/vue/dist/vue.js"></script> -->
+</head>
+
+<body>
+  <div id="root">
+    <div class="cc">
+      <div title="22"> 1 </div>
+      <div> 2 </div>
+      <div> 3 </div>
+      <ul>
+        <li>hello1</li>
+        <li>hello2</li>
+        <li>hello3</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    let tags = `div,p,ul,a,img,li`.split(',')
+
+    function makeMap(keys) {
+      let set = {}
+      tags.forEach(key => set[key] = true)
+
+      return function (tagName) {
+        return !!set[tagName.toLowerCase()]
+      }
+    }
+
+    // 缓存数据，N次循环变一次，生成set对象
+
+    let isHTMLTag = makeMap(tags)
+    isHTMLTag('div')
+    console.log(isHTMLTag('div'))
+  </script>
+</body>
+
+
+
+</html>
