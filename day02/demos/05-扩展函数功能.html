@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扩展函数功能.</title>
+</head>
+
+<body>
+
+
+  <script>
+    // 这个就是在函数原有的基础上增加额外的操作：函数的拦截
+    /**
+     * 1. 使用一个临时的函数名字存储函数
+     * 2. 重新定义原来的函数
+     * 3. 定义扩展的功能
+     * 4. 调用临时的那个函数
+     */
+    function func() {
+      console.log('原始的功能')
+    }
+
+    let _tmpFn = func
+
+    func = function () {
+      _tmpFn()
+      console.log('新的功能')
+    }
+
+    func()
+  </script>
+</body>
+
+</html>

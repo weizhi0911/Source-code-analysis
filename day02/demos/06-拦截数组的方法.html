@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拦截数组的方法</title>
+</head>
+
+<body>
+
+
+  <script>
+    let ARRAY_METHOD = [ // 数组的方法
+      'push',
+      'pop',
+      'shift',
+      'unshift',
+      'sort',
+      'splice',
+      'reverse',
+    ]
+
+    // 思路，原型链继承：修改原型链的结构
+    let arr = []
+    // 继承关系：arr -> Array.prototype -> Object.prototype -> ...
+    // 继承关系：arr -> 改写的方法 -> Array.prototype -> Object.prototype -> ... （优先访问改写的方法）
+
+    let array_methods = Object.create(Array.prototype) // 对象继承数组的方法,这里有数组的所有方法
+
+    ARRAY_METHOD.forEach(function (method) {
+      console.log(arguments)
+      // 便利收集方法，访问数组的方法时，会优先经过这边（函数的拦截）
+      array_methods[method] = function () { // function为了使用this
+        console.log('调用的是原来的' + method + '方法')
+
+        let res = Array.prototype[method].apply(this, arguments) // 给Array的方法添加一层拦截，并且附带参数传过去
+
+        // Array.prototype[method].call(this, ...arguments) // call参数必须是真数组，arguments不是真数组
+        return res
+      }
+    })
+
+    arr.__proto__ = array_methods
+
+    // 有的浏览器不支持__proto__
+    // Vue 的源码做了判断
+    // 如果浏览器支持，则这样做
+    // 如果不支持，Vue则使用的是混入法 源码中copyAugment函数
+  </script>
+</body>
+
+</html>
