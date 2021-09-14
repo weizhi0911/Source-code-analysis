@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>处理数组响应式化的问题</title>
+</head>
+
+<body>
+
+
+  <script>
+    let data = {
+      name: 'jin',
+      abs: {
+        a: {
+          b: {}
+        }
+      },
+      list: [{
+        name: 'wwf',
+        val: 0
+      }]
+    }
+    let ARRAY_METHOD = [ // 数组的方法
+      'push',
+      'pop',
+      'shift',
+      'unshift',
+      'sort',
+      'splice',
+      'reverse',
+    ]
+
+    // 思路，原型链继承：修改原型链的结构
+    let array_methods = Object.create(Array.prototype) // 对象继承数组的方法,这里有数组的所有方法
+
+    ARRAY_METHOD.forEach(function (method) {
+      // 便利收集方法，访问数组的方法时，会优先经过这边（函数的拦截）
+      array_methods[method] = function () { // function为了使用this，arguments数组调用方法时的参数，例：{name:'ggg',value:2}
+        console.log('调用的是原来的' + method + '方法')
+        console.log(arguments)
+        
+        // 将用数组方法修改的数据进行响应式处理
+        for (let i = 0; i < arguments.length; i++) {
+          reactity(arguments[i])
+          
+        }
+
+        let res = Array.prototype[method].apply(this, arguments) // 给Array的方法添加一层拦截，并且附带参数传过去
+
+        // Array.prototype[method].call(this, ...arguments) // call参数必须是真数组，arguments不是真数组
+        return res
+      }
+    })
+    // 除了递归还可以使用队列（深度优先转换为广度优先）
+    function reactity(o) {
+
+      let keys = Object.keys(o)
+      // 将对象转化为响应式的
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i]; // 属性名
+        let value = o[key]
+        // 判断这个属性是不是引用类型，判断是不是数组类型
+        // 如果是引用类型就要递归，否则不用，都需要在defindeReactive将其变成响应式的
+        // 如果是数组，就需要循环数组，然后将数组里面的元素进行响应式化
+        if (Array.isArray(value)) {
+          // 数组
+          value.__proto__ = array_methods // 数组就可以响应式了
+          for (let j = 0; j < value.length; j++) {
+            reactity(value[j])
+
+          }
+        } else {
+          // 对象或值类型
+          defindeReactive(o, key, value, true)
+
+        }
+
+        // defindeReactive(o, keys[i], o[keys[i]], true)
+      }
+    }
+    // 简化后的版本
+    function defindeReactive(target, key, value, enumerable) {
+      // 函数内部或是一个局部作用域，这个value就只在函数内使用的变量(闭包)
+
+      if (Object.prototype.toString.call(value) === '[object Object]') {
+        // 是非数组的引用类型
+        reactity(value) // 递归
+      }
+      console.log(target)
+      Object.defineProperty(target, key, {
+        configurable: true,
+        enumerable: !!enumerable,
+        get() {
+          console.log(`读取${key}属性`)
+          return value
+        },
+        set(newVal) {
+          console.log(`设置${key}属性值为：${newVal}`)
+          value = newVal
+        }
+      })
+    }
+
+    reactity(data)
+    // 有的浏览器不支持__proto__
+    // Vue 的源码做了判断
+    // 如果浏览器支持，则这样做
+    // 如果不支持，Vue则使用的是混入法 源码中copyAugment函数
+  </script>
+</body>
+
+</html>
