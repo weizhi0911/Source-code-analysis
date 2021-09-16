@@ -138,8 +138,10 @@
       let elm = document.querySelector(option.el) // Vue中是字符串，这里是DOM
       this._template = elm
       this._parent = elm.parentNode
-      reactity(this._data, this /**将Vue实例传进去，折中的处理*/ ) // 将数据响应式处理
 
+      // reactity(this._data, this /**将Vue实例传进去，折中的处理*/ ) // 将数据响应式处理
+
+      this.initData() //
       this.mount()
     }
 
@@ -244,10 +246,67 @@
         } else {
           // 对象或值类型
           defindeReactive.call(vm, o, key, value, true)
-
         }
 
+        // app._data 映射到 app
+        // 只需要在这里添加代理即可（问题：在这里写的代码是会递归的）
+        // 如果在这里将属性映射到 vue 实例上， 那么就表示 vue 实例可以使用属性 key
+        // {
+        //   data: { name: 'js', child: { name: 'ts' } }
+        // {
+        // 以上对象递归的话，后面的name会覆盖前面的name
+        // 我们需要重写reactity方法 -> initData方法
       }
+    }
+
+
+
+    // 取代原来 reactify 方法，将对象转化为响应式
+
+    JGVue.prototype.initData = function () {
+      // 遍历 this._data 的成员，将属性转化为响应式，将属性代理到实例上
+      let keys = Object.keys(this._data)
+      // 响应式化
+      for (let i = 0; i < keys.length; i++) {
+        // 这里将对象this._data[keys[i]]变成响应式
+        console.log('ooo')
+        console.log(this)
+        reactity(this._data, this)
+      }
+
+
+      // 代理
+      for (let i = 0; i < keys.length; i++) {
+        // 将this._data[keys[i]]映射到this[keys[i]]上
+        // 就是要让this提供keys[i]这个属性
+        // 在访问这个属性的时候相当于在访问this._data的这个属性
+
+        // Object.defineProperty(this, keys[i], {
+        //   enumerable: true,
+        //   configurable: true,
+        //   get() {
+        //     return this._data[keys[i]]
+        //   },
+        //   set(newVal) {
+        //     this._data[keys[i]] = newVal
+        //   }
+        // })
+
+        proxy(this, '_data', keys[i])
+      }
+    }
+
+    function proxy(target, prop, key) {
+      Object.defineProperty(target, key, {
+        enumerable: true,
+        configurable: true,
+        get() {
+          return target[prop][key]
+        },
+        set(newVal) {
+          target[prop][key] = newVal
+        }
+      })
     }
     // 简化后的版本
     function defindeReactive(target, key, value, enumerable) {
@@ -268,7 +327,16 @@
         },
         set(newVal) {
           console.log(`设置${key}属性值为：${newVal}`)
-          value = newVal
+          // 注意，这边如果原来值是数组并且将它赋值的化，是不会经过这层set的
+          // 原因是defineProperty不能监听数组
+          // 其他值可以响应式
+
+          // 这边这样加判断是因为initData方法（app映射）影响，之后会将此赋值响应式改造
+          if (typeof newVal === 'object' && newVal !== null) {
+            value = reactity(newVal, that) // 赋值使其响应式
+          } else {
+            value = newVal
+          }
 
           // 改变数据的时候模板刷新（现在是假的，只是演示，Vue中使用watcher实现）
           // 这里Vue的实例怎么获取（watcher就不会有这个问题）
