@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>事件移除问题</title>
+</head>
+
+<body>
+  <button id="btn">click</button>
+
+  <script>
+    var btn = document.querySelector('#btn')
+
+    // btn.addEventListener('click', function () {
+    //   console.log('点击了')
+    // })
+    // // 移除
+    // // 这样子是不能移除的
+    // // 原因：俩个函数不是同一个地址
+    // btn.removeEventListener('click', function () {
+    //   console.log('移除了')
+    // })
+
+    // 如果想要可移除，需要把函数单独提出来
+    function hander() {
+      console.log('一个可移除的事件处理函数')
+    }
+
+    btn.addEventListener('click', hander)
+    // 使用 btn.removeEventListener('click', hander) 移除
+  </script>
+</body>
+
+</html>

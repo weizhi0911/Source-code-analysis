@@ -40,7 +40,7 @@
             if (!_events) return
             for (let i = _events.length - 1; i >= 0; i--) {
               // 正常循环删除的话，数组i的序号会变的，所以要倒着循环
-              if (_events[i] === handler) {
+              if (_events[i] === handler) { // 函数类型比较的是地址
                 _events.splice(i, 1)
               }
 
@@ -72,6 +72,10 @@
     event.on('click',()=>{console.log('接收')})
     // 别的事件
     event.emit('click') // 将会依次调用
+
+    // js中基本类型是比较值
+    // 引用类型是比较地址
+    // 引用类型与基本类型，是将其转换为基本类型再比较，如果是 === 严格等于是不转换比较
   </script>
 </body>
 
