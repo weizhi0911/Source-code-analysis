@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+
+</head>
+
+<body>
+
+  <div id="root">
+    <span>{{name}}</span>
+    <span>{{age}}</span>
+    <span>{{gender}}</span>
+
+    <ul>
+      <li> 1 </li>
+      <li> 2 </li>
+      <li> 3 </li>
+    </ul>
+  </div>
+
+</body>
+<script src="./watcher.js"></script>
+<script src="./vnode.js"></script>
+<script src="./compiter.js"></script>
+<script src="./jqvue.js"></script>
+<script src="./initdata.js"></script>
+<script src="./initrender.js"></script>
+
+<script>
+  let app = new JGVue({
+    el: '#root',
+    data: {
+      name: 'wwf',
+      age: '18',
+      gender: '男',
+      list: [{
+        name: 'wwf0',
+        val: 0
+      }, {
+        name: 'wwf1',
+        val: 1
+      }, {
+        name: 'wwf2',
+        val: 2
+      }]
+    }
+  })
+</script>
+
+</html>
