@@ -7,6 +7,8 @@ import { def } from '../util/index'
 
 const arrayProto = Array.prototype
 export const arrayMethods = Object.create(arrayProto)
+// arrayProto 就是继承自Array.prototype 的数组
+// 只需要让响应式数组继承自arrayMethods
 
 const methodsToPatch = [
   'push',

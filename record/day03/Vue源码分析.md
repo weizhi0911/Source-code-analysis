@@ -3,7 +3,7 @@
 1. 各个文件的作用
 2. Vue 的初始化流程
 
-## 各个文件夹的作用
+## vue-src 各个文件夹的作用
 
 1. compiler 编译用的
 
@@ -22,3 +22,35 @@
 5. sfc, 单文件组件（略）
 
 6. shared 公共工具，方法
+
+## core/observer 文件中各个文件的作用
+
+- array.js 创建含有重写数组方法的数组，让所有的响应式数据数组继承自该数组
+
+- dep.js Dep 类
+
+- index.js Observer 类，observe 的工厂函数
+
+- scheduler.js vue 中的任务调度工具，watcher 执行的核心
+
+- traverse.js 递归遍历响应式数据，目的是触发依赖收集
+
+- watcher.js Watcher 类
+
+## 面试题（对数组的去重）
+
+```js
+let arr = [2, 3, 1, 3, 2, 1, 2, 3, 1, 2, 1, 5];
+
+// 一般情况
+// let newArr = [];
+arr.forEach((v) => newArr.indexOf(v) === -1 && newArr.push(v)); // indexOf 本身隐含着循环的
+
+// 利用集合思想来简化实现（ES6 Set）
+let _set = {};
+let _newarr = [];
+arr.forEach((v) => _set[v] || ((_set[v] = true), _newarr.push(v))); // 减少赋值行为
+
+// 终极去重方法，如何判同
+
+```

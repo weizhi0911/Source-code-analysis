@@ -48,15 +48,26 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 
 export function initState (vm: Component) {
   vm._watchers = []
+
   const opts = vm.$options
+
+  // 处理options.props的成员，一般定义组件的时候，用于定义对外的成员，初学很少用，其处理逻辑与data类似
   if (opts.props) initProps(vm, opts.props)
+
+  // 处理options.methods的成员
   if (opts.methods) initMethods(vm, opts.methods)
+
+  // 处理options.data（响应式化）
   if (opts.data) {
     initData(vm)
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+
+  // 处理options.computed 计算属性
   if (opts.computed) initComputed(vm, opts.computed)
+
+  // 处理options.watch
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
@@ -98,13 +109,13 @@ function initProps (vm: Component, propsOptions: Object) {
         }
       })
     } else {
-      defineReactive(props, key, value)
+      defineReactive(props, key, value) // 将属性响应式化
     }
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
     // instantiation here.
     if (!(key in vm)) {
-      proxy(vm, `_props`, key)
+      proxy(vm, `_props`, key) // 将_props上的成员映射到vue实例上，不需要app.props.xxx来获取属性值，直接使用app.xxx来获取
     }
   }
   toggleObserving(true)
@@ -112,6 +123,8 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+
+  // 判断data是否是函数形式，函数的话将调用getData进行转化
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
@@ -130,6 +143,7 @@ function initData (vm: Component) {
   let i = keys.length
   while (i--) {
     const key = keys[i]
+    // 以下是避免props，data，computed，methods重名的提示
     if (process.env.NODE_ENV !== 'production') {
       if (methods && hasOwn(methods, key)) {
         warn(
@@ -154,6 +168,9 @@ function initData (vm: Component) {
 
 export function getData (data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
+
+  // pushTarget 由于此时是vue的初始化，还没开始进行模板渲染，所以不需要进行依赖收集，在pushTarget 的时候传入空
+  // 就将全局的Watcher 设置成undefined，依赖收集的时候有一个判断是Dep.target 存在的时候才收集
   pushTarget()
   try {
     return data.call(vm, vm)
@@ -265,27 +282,29 @@ function createGetterInvoker(fn) {
 function initMethods (vm: Component, methods: Object) {
   const props = vm.$options.props
   for (const key in methods) {
-    if (process.env.NODE_ENV !== 'production') {
-      if (typeof methods[key] !== 'function') {
-        warn(
-          `Method "${key}" has type "${typeof methods[key]}" in the component definition. ` +
-          `Did you reference the function correctly?`,
-          vm
-        )
-      }
-      if (props && hasOwn(props, key)) {
-        warn(
-          `Method "${key}" has already been defined as a prop.`,
-          vm
-        )
-      }
-      if ((key in vm) && isReserved(key)) {
-        warn(
-          `Method "${key}" conflicts with an existing Vue instance method. ` +
-          `Avoid defining component methods that start with _ or $.`
-        )
-      }
-    }
+    // if (process.env.NODE_ENV !== 'production') {
+    //   if (typeof methods[key] !== 'function') {
+    //     warn(
+    //       `Method "${key}" has type "${typeof methods[key]}" in the component definition. ` +
+    //       `Did you reference the function correctly?`,
+    //       vm
+    //     )
+    //   }
+    //   if (props && hasOwn(props, key)) {
+    //     warn(
+    //       `Method "${key}" has already been defined as a prop.`,
+    //       vm
+    //     )
+    //   }
+    //   if ((key in vm) && isReserved(key)) {
+    //     warn(
+    //       `Method "${key}" conflicts with an existing Vue instance method. ` +
+    //       `Avoid defining component methods that start with _ or $.`
+    //     )
+    //   }
+    // }
+
+    // 将methods属性中的方法，绑定上下文后挂载到vue实例上
     vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm)
   }
 }

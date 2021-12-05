@@ -13,6 +13,7 @@ import { extend, mergeOptions, formatComponentName } from '../util/index'
 let uid = 0
 
 export function initMixin (Vue: Class<Component>) {
+
   Vue.prototype._init = function (options?: Object) {
     const vm: Component = this
     // a uid
@@ -29,12 +30,15 @@ export function initMixin (Vue: Class<Component>) {
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
+    // 是否是一个组件
     if (options && options._isComponent) {
+      // 刚开始源码分析时暂时掠过，之后来看
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
       initInternalComponent(vm, options)
     } else {
+      // mergeOptions 可以简单的理解为合并，为options添加属性
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -49,14 +53,14 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
-    initLifecycle(vm)
-    initEvents(vm)
-    initRender(vm)
-    callHook(vm, 'beforeCreate')
-    initInjections(vm) // resolve injections before data/props
-    initState(vm)
-    initProvide(vm) // resolve provide after data/props
-    callHook(vm, 'created')
+    initLifecycle(vm) // 初始化生命周期的状态变量
+    initEvents(vm)    // 初始化事件的容器：$event
+    initRender(vm)    // 初始化渲染标记用到的变量
+    callHook(vm, 'beforeCreate') // 调用生命周期函数
+    initInjections(vm) // resolve injections before data/props // 初始化注入器 略
+    initState(vm)  // 初始化状态数据（data,props等）
+    initProvide(vm) // resolve provide after data/props // 暂略
+    callHook(vm, 'created') // 生命周期函数的调用
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
@@ -65,10 +69,15 @@ export function initMixin (Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
 
+    // 前面的代码是组件的创建
     if (vm.$options.el) {
-      vm.$mount(vm.$options.el)
+      vm.$mount(vm.$options.el) // 组件的挂载，将组件挂载到el描述的元素
+      // 会先调用扩展的那个$mount方法，生成render
+      // 再调用原始的$mount方式，获得元素，再调用mountComponent方法
+      // 这俩个方法都定义在platforms/web里面
     }
   }
+  
 }
 
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
